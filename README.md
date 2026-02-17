@@ -61,6 +61,11 @@ INTEGRATION_DESCRIPTION = ""    # Optional description
 # Warehouse Configuration
 WAREHOUSE_NAME = ""             # Name of the Snowflake warehouse
 WAREHOUSE_ACTIVITIES = ["query", "index", "dataflow"]
+
+# Existing Account ID (optional)
+# If you already have a Snowflake account created in Domo, enter the account ID here
+# to skip account creation and proceed directly to BYOS integration creation
+EXISTING_ACCOUNT_ID = ""  # Leave empty to create a new account
 ```
 
 ## Usage
