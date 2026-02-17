@@ -39,6 +39,11 @@ WAREHOUSE_NAME = ""             # Name of the Snowflake warehouse to assign to t
 # "dataflow" - Allows dataflow/ETL operations
 WAREHOUSE_ACTIVITIES = ["query", "index", "dataflow"]  # List of activities to enable
 
+# Existing Account ID (optional)
+# If you already have a Snowflake account created in Domo, enter the account ID here
+# to skip account creation and proceed directly to BYOS integration creation
+EXISTING_ACCOUNT_ID = ""  # Leave empty to create a new account
+
 # =============================================================================
 # FUNCTIONS
 # =============================================================================
@@ -331,35 +336,46 @@ def assign_warehouse_to_integration(byos_id, warehouse_name, activities=None):
 # =============================================================================
 
 if __name__ == "__main__":
-    # Step 1: Create the Snowflake account
-    account_response = create_snowflake_account()
-    
-    # Step 2: If account creation succeeded, create the BYOS integration
-    if account_response.status_code in [200, 201]:
-        account_data = account_response.json()
-        account_id = account_data.get("id")
-        
-        if account_id:
-            print("\n" + "=" * 60)
-            print("CREATING BYOS INTEGRATION")
-            print("=" * 60)
-            byos_response = create_byos_integration(account_id)
-            
-            # Step 3: If BYOS integration created and warehouse name provided, assign warehouse
-            if byos_response.status_code in [200, 201] and WAREHOUSE_NAME:
-                byos_data = byos_response.json()
-                byos_id = byos_data.get("id")
-                
-                if byos_id:
-                    print("\n" + "=" * 60)
-                    print("ASSIGNING WAREHOUSE TO INTEGRATION")
-                    print("=" * 60)
-                    assign_warehouse_to_integration(byos_id, WAREHOUSE_NAME)
-                else:
-                    print("Error: Could not extract BYOS integration ID from response")
-            elif not WAREHOUSE_NAME:
-                print("\nNo WAREHOUSE_NAME configured - skipping warehouse assignment.")
-        else:
-            print("Error: Could not extract account ID from response")
+    # Check if using an existing account or creating a new one
+    if EXISTING_ACCOUNT_ID:
+        # Use existing account ID
+        print("=" * 60)
+        print("USING EXISTING ACCOUNT")
+        print("=" * 60)
+        print(f"Using existing account ID: {EXISTING_ACCOUNT_ID}")
+        account_id = EXISTING_ACCOUNT_ID
     else:
-        print("\nSkipping BYOS integration creation due to account creation failure.")
+        # Step 1: Create the Snowflake account
+        account_response = create_snowflake_account()
+        
+        # Check if account creation succeeded
+        if account_response.status_code in [200, 201]:
+            account_data = account_response.json()
+            account_id = account_data.get("id")
+            if not account_id:
+                print("Error: Could not extract account ID from response")
+                exit(1)
+        else:
+            print("\nSkipping BYOS integration creation due to account creation failure.")
+            exit(1)
+    
+    # Step 2: Create the BYOS integration
+    print("\n" + "=" * 60)
+    print("CREATING BYOS INTEGRATION")
+    print("=" * 60)
+    byos_response = create_byos_integration(account_id)
+    
+    # Step 3: If BYOS integration created and warehouse name provided, assign warehouse
+    if byos_response.status_code in [200, 201] and WAREHOUSE_NAME:
+        byos_data = byos_response.json()
+        byos_id = byos_data.get("id")
+        
+        if byos_id:
+            print("\n" + "=" * 60)
+            print("ASSIGNING WAREHOUSE TO INTEGRATION")
+            print("=" * 60)
+            assign_warehouse_to_integration(byos_id, WAREHOUSE_NAME)
+        else:
+            print("Error: Could not extract BYOS integration ID from response")
+    elif not WAREHOUSE_NAME:
+        print("\nNo WAREHOUSE_NAME configured - skipping warehouse assignment.")
